@@ -1,0 +1,8 @@
+Company,City,Age,Salary,Handsome_degree,Result
+Google,ShangHai,36,40,1,N
+Google,Xian,31,30,1,N
+Google,ShenZhen,26,38,0,N
+Google,Xian,23,40,0,N
+Google,ShangHai,36,40,0,N
+Google,ShangHai,36,40,0,N
+Google,ShangHai,36,40,0,N

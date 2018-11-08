@@ -26,8 +26,8 @@ def first_function():
 	sess.run(init)
 	for step in range(100):
 		sess.run(train,feed_dict={x_i:x_data[step],y_data_i:y_data[step]})
-		if step % 20 == 0:
-			print(step,sess.run(w),sess.run(b))
+		if step % 2 == 0:
+			print "Loss[%d] : %f"%(step,sess.run(loss,feed_dict={x_i:x_data[step],y_data_i:y_data[step]}))
 	return
 
 def main():
