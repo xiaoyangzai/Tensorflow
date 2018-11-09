@@ -42,10 +42,9 @@ def get_train_data(images_path):
 
         image = cv2.imread(image_file)
         image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
-        label = int(image_file.split('-')[-1].split('.')[0])
+        label = int(image_file.split('_')[-1].split('.')[0])
         images.append(image)
         labels.append(label)
-        print labels[:10]
     images = np.array(images)
     labels = np.array(labels)
     train_images = images[:len(images) - 50]
@@ -67,7 +66,8 @@ def next_batch_set(images,labels,batch_size = 100):
         batch_images: A batch of images. 
         batch_labels: A batch of labels.
     '''
-    indices = np.random.choice(len(images),batch_size)
+    num = len(images)
+    indices = np.random.choice(num,batch_size)
     batch_images = images[indices]
     batch_labels = labels[indices]
     return batch_images,batch_labels
@@ -79,7 +79,7 @@ def main(_):
     labels = tf.placeholder(tf.int32,shape=[None],name='labels')
 
     print("Build the claser Model...")
-    cls_model = model.Model(is_training=True,num_classes=2)
+    cls_model = model.Model(is_training=True,num_classes=10)
 
     preprocessed_inputs = cls_model.preprocess(inputs)
     prediction_dict = cls_model.predict(preprocessed_inputs)
@@ -95,7 +95,7 @@ def main(_):
     tf.add_to_collection("predict_network",acc)
 
     global_step = tf.Variable(0, trainable=False)
-    learning_rate = tf.train.exponential_decay(0.1,global_step,100,0.9)
+    learning_rate = tf.train.exponential_decay(0.0001,global_step,100,0.9)
 
     optimizer = tf.train.MomentumOptimizer(learning_rate,0.9)
     train_step = optimizer.minimize(loss,global_step)

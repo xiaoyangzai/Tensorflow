@@ -9,7 +9,7 @@ from captcha.image import ImageCaptcha
 
 def generate_captcha(text='1'):
     '''Generate a digit image'''
-    capt = ImageCaptcha(width=28,height=28,font_sizes=[24])
+    capt = ImageCaptcha(width=64,height=64,font_sizes=[32])
     image = capt.generate_image(text)
     image = np.array(image,dtype=np.uint8)
     return image
