@@ -91,8 +91,8 @@ class Model(BaseModel):
             preprocessed_inputs: A float32 tensor with shape [batch_size,height,width,num_classes] representing a batch of images.
         """
         preprocessed_inputs = tf.to_float(inputs)
-        vgg_mean = tf.constant([123.68,116,779,103.939],dtype=tf.float32,shape=(1,1,1,3),name='vgg_mean')
-        preprocessed_inputs -= vgg_mean 
+        preprocessed_inputs = tf.subtract(preprocessed_inputs,128.0)
+        preprocessed_inputs = tf.div(preprocessed_inputs,128.0)
         return preprocessed_inputs
 
     def predict(self, preprocessed_inputs):
@@ -108,21 +108,75 @@ class Model(BaseModel):
         """
         shape = preprocessed_inputs.get_shape().as_list()
         height, width, num_channels = shape[1:]
-       	with tf.name_scope('conv1_1') as scope:
-		   net = tf.contrib.layers.conv2d(inputs=preprocessed_inputs,num_outputs=64,kernel_size=3,padding='SAME',activation_fn=tf.nn.relu,scope=scope)
-       
-       	with tf.name_scope('conv1_2') as scope:
-		   net = tf.contrib.layers.conv2d(inputs=preprocessed_inputs,num_outputs=64,kernel_size=3,padding='SAME',activation_fn=tf.nn.relu,scope=scope)
-       
-       	with tf.name_scope('conv1_1') as scope:
-		   net = tf.contrib.layers.conv2d(inputs=preprocessed_inputs,num_outputs=64,kernel_size=3,padding='SAME',activation_fn=tf.nn.relu,scope=scope)
-       
-       	with tf.name_scope('conv1_1') as scope:
-		   net = tf.contrib.layers.conv2d(inputs=preprocessed_inputs,num_outputs=64,kernel_size=3,padding='SAME',activation_fn=tf.nn.relu,scope=scope)
-       
-       	with tf.name_scope('conv1_1') as scope:
-		   net = tf.contrib.layers.conv2d(inputs=preprocessed_inputs,num_outputs=64,kernel_size=3,padding='SAME',activation_fn=tf.nn.relu,scope=scope)
-       
+        conv1_weights = tf.get_variable(
+        'conv1_weights', shape=[3, 3, num_channels, 32], 
+        dtype=tf.float32)
+        conv1_biases = tf.get_variable(
+        'conv1_biases', shape=[32], dtype=tf.float32)
+        conv2_weights = tf.get_variable(
+        'conv2_weights', shape=[3, 3, 32, 32], dtype=tf.float32)
+        conv2_biases = tf.get_variable(
+        'conv2_biases', shape=[32], dtype=tf.float32)
+        conv3_weights = tf.get_variable(
+        'conv3_weights', shape=[3, 3, 32, 64], dtype=tf.float32)
+        conv3_biases = tf.get_variable(
+        'conv3_biases', shape=[64], dtype=tf.float32)
+        conv4_weights = tf.get_variable(
+        'conv4_weights', shape=[3, 3, 64, 64], dtype=tf.float32)
+        conv4_biases = tf.get_variable(
+        'conv4_biases', shape=[64], dtype=tf.float32)
+        conv5_weights = tf.get_variable(
+        'conv5_weights', shape=[3, 3, 64, 64], dtype=tf.float32)
+        conv5_biases = tf.get_variable(
+        'conv5_biases', shape=[64], dtype=tf.float32)
+        conv6_weights = tf.get_variable(
+        'conv6_weights', shape=[3, 3, 64, 128], dtype=tf.float32)
+        conv6_biases = tf.get_variable(
+        'conv6_biases', shape=[128], dtype=tf.float32)
+        
+        flat_height = height // 4
+        flat_width = width // 4
+        flat_size = flat_height * flat_width *128
+        
+        fc7_weights = tf.get_variable(
+        'fc7_weights', shape=[flat_size, 256], dtype=tf.float32)
+        fc7_biases = tf.get_variable(
+        'f7_biases', shape=[256], dtype=tf.float32)
+        fc8_weights = tf.get_variable(
+        'fc8_weights', shape=[256, 512], dtype=tf.float32)
+        fc8_biases = tf.get_variable(
+        'f8_biases', shape=[512], dtype=tf.float32)
+        fc9_weights = tf.get_variable(
+        'fc9_weights', shape=[512, self.num_classes], dtype=tf.float32)
+        fc9_biases = tf.get_variable(
+        'f9_biases', shape=[self.num_classes], dtype=tf.float32)
+        
+        net = preprocessed_inputs
+        net = tf.nn.conv2d(net, conv1_weights, strides=[1, 1, 1, 1],
+        padding='SAME')
+        net = tf.nn.relu(tf.nn.bias_add(net, conv1_biases))
+        net = tf.nn.conv2d(net, conv2_weights, strides=[1, 1, 1, 1],
+        padding='SAME')
+        net = tf.nn.relu(tf.nn.bias_add(net, conv2_biases))
+        net = tf.nn.max_pool(net, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
+        padding='SAME')
+        net = tf.nn.conv2d(net, conv3_weights, strides=[1, 1, 1, 1],
+        padding='SAME')
+        net = tf.nn.relu(tf.nn.bias_add(net, conv3_biases))
+        net = tf.nn.conv2d(net, conv4_weights, strides=[1, 1, 1, 1],
+        padding='SAME')
+        net = tf.nn.relu(tf.nn.bias_add(net, conv4_biases))
+        net = tf.nn.max_pool(net, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
+        padding='SAME')
+        net = tf.nn.conv2d(net, conv5_weights, strides=[1, 1, 1, 1],
+        padding='SAME')
+        net = tf.nn.relu(tf.nn.bias_add(net, conv5_biases))
+        net = tf.nn.conv2d(net, conv6_weights, strides=[1, 1, 1, 1],
+        padding='SAME')
+        net = tf.nn.relu(tf.nn.bias_add(net, conv6_biases))
+        net = tf.reshape(net, shape=[-1, flat_size])
+        net = tf.nn.relu(tf.add(tf.matmul(net, fc7_weights), fc7_biases))
+        net = tf.nn.relu(tf.add(tf.matmul(net, fc8_weights), fc8_biases))
         net = tf.add(tf.matmul(net, fc9_weights), fc9_biases)
         prediction_dict = {'logits': net}
         return prediction_dict
@@ -156,10 +210,9 @@ class Model(BaseModel):
         representing loss values.
         """
         logits = prediction_dict['logits']
-        reg = tf.contrib.layers.apply_regularization(tf.contrib.layers.l2_regularizer(1e-5),tf.trainable_variables())
         loss = tf.reduce_mean(
         tf.nn.sparse_softmax_cross_entropy_with_logits(
-        logits=logits, labels=groundtruth_lists)) + reg
+        logits=logits, labels=groundtruth_lists))
         loss_dict = {'loss': loss}
         return loss_dict
 
