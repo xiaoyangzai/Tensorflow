@@ -15,8 +15,8 @@ def generate_captcha(text='1'):
     return image
 
 if __name__ == "__main__":
-    output_dir = './datasets/images/'
-    for i in range(20000):
+    output_dir = '../digits_dataset_for_test/'
+    for i in range(10):
         label = np.random.randint(0,10)
         image = generate_captcha(str(label))
         image_name = 'image{}_{}.jpg'.format(i+1,label)

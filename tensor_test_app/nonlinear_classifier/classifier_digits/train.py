@@ -83,6 +83,7 @@ def main(_):
 
     preprocessed_inputs = cls_model.preprocess(inputs)
     prediction_dict = cls_model.predict(preprocessed_inputs)
+    probs = tf.nn.softmax(prediction_dict['logits']) 
     loss_dict = cls_model.loss(prediction_dict,labels)
     loss = loss_dict['loss']
 
@@ -93,6 +94,8 @@ def main(_):
 
     acc = tf.reduce_mean(tf.cast(tf.equal(classes,labels),'float'))
     tf.add_to_collection("predict_network",acc)
+    tf.add_to_collection("classes",classes)
+    tf.add_to_collection("probs",probs)
 
     global_step = tf.Variable(0, trainable=False)
     learning_rate = tf.train.exponential_decay(0.0001,global_step,100,0.9)

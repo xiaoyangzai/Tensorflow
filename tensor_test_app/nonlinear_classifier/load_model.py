@@ -17,7 +17,7 @@ def get_test_data(images_path):
 		image = cv2.imread(image_file)
 		image = cv2.imread(image_file)
 		image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
-		label = int(image_file.split('-')[-1].split('.')[0])
+		label = int(image_file.split('_')[-1].split('.')[0])
 		images.append(image)
 		labels.append(label)
 	images = np.array(images)
@@ -42,7 +42,12 @@ def main():
 		inputs = graph.get_operation_by_name('inputs').outputs[0]
 		labels = graph.get_operation_by_name('labels').outputs[0]
 		accuracy = tf.get_collection("predict_network")[0]
-		print ("Accuracy for test images: ",sess.run(accuracy,feed_dict={inputs:test_images,labels:test_labels}))
+		classes = tf.get_collection("classes")[0]
+		probs = tf.get_collection("probs")[0]
+		acr,cls,prbs = sess.run([accuracy,classes,probs],feed_dict={inputs:test_images,labels:test_labels})
+        print "Accuracy: ",acr
+        for index in range(len(cls)):
+            print "%d : %.3f"%(cls[index],prbs[index][cls[index]])
 
 if __name__ == "__main__":
 	main()
