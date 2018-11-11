@@ -15,7 +15,10 @@ def generate_captcha(text='1'):
     return image
 
 if __name__ == "__main__":
-    output_dir = '../digits_dataset_for_test/'
+    if len(sys.argv) != 2:
+        print "Usage: ./generate_samples.py [Path to save generated samples]"
+        return
+    output_dir = sys.argv[1] 
     for i in range(10):
         label = np.random.randint(0,10)
         image = generate_captcha(str(label))
