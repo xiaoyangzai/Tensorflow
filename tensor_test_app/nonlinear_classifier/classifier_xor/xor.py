@@ -2,8 +2,21 @@
 
 import tensorflow as tf
 import numpy as np
+import time
 import math
 import matplotlib.pyplot as plt
+def draw_result(steps,losses,accuracies):
+	fig,ax = plt.subplots(2,1)
+	ax[0].plot(steps,losses,'-o')
+	ax[0].set_title('Loss of each step')
+	ax[0].set_xlabel('Step')
+	ax[0].set_ylabel('Loss')
+
+	ax[1].plot(steps,accuracies,'-x')
+	ax[1].set_title('Accuracy of each step')
+	ax[1].set_xlabel('Step')
+	ax[1].set_ylabel('Accuracy')
+	plt.show()
 
 def add_layer(inputs_data,input_size,output_size,active_function = None,label = '1'):
 	lay_label = 'layer'+label
@@ -30,8 +43,7 @@ def first_function():
 	diff = -tf.reduce_sum(y_data_i*tf.log(a_2))	
 	#diff = tf.reduce_sum(tf.square(y_data_i - a_2))	
 	loss = tf.reduce_mean(diff)
-	
-	optimizer = tf.train.GradientDescentOptimizer(0.1)
+	optimizer = tf.train.GradientDescentOptimizer(0.05)
 	train = optimizer.minimize(loss)
 	
 	init = tf.initialize_all_variables()
@@ -39,19 +51,33 @@ def first_function():
 	sess = tf.Session()
 	sess.run(init)
 	saver = tf.train.Saver()
-	saver.restore(sess,'mode.ckpt')
-	print (x_data[0],y_data[0],sess.run(a_2,feed_dict={x_i:[x_data[0]]}))
-	print (x_data[1],y_data[1],sess.run(a_2,feed_dict={x_i:[x_data[1]]}))
-	print (x_data[2],y_data[2],sess.run(a_2,feed_dict={x_i:[x_data[2]]}))
-	print (x_data[3],y_data[3],sess.run(a_2,feed_dict={x_i:[x_data[3]]}))
+	tf.add_to_collection("probs",a_2)
+	classes = tf.cast(tf.argmax(a_2,axis=1),dtype=tf.int32)
+	y_label = tf.cast(tf.argmax(y_data_i,axis=1),dtype=tf.int32)
+	tf.add_to_collection("classes",classes)
+	acc = tf.reduce_mean(tf.cast(tf.equal(classes,y_label),'float'))
+	tf.add_to_collection("accuracy",acc)
+	logfile = "train.log"
+	logfd = open(logfile,'w')
+	print "begin to train model...."
+	logfd.write("#step,loss,accuracy\n")
+	steps = []
+	losses = []
+	accuracies = []
 	for step in range(3000):
+		#time.sleep(1)
+		steps.append(step)
 		sess.run(train,feed_dict={x_i:x_data,y_data_i:y_data})
-	
-	print (x_data[0],y_data[0],sess.run(a_2,feed_dict={x_i:[x_data[0]]}))
-	print (x_data[1],y_data[1],sess.run(a_2,feed_dict={x_i:[x_data[1]]}))
-	print (x_data[2],y_data[2],sess.run(a_2,feed_dict={x_i:[x_data[2]]}))
-	print (x_data[3],y_data[3],sess.run(a_2,feed_dict={x_i:[x_data[3]]}))
-	saver.save(sess,"mode.ckpt")
+		loss_,acc_ = sess.run([loss,acc],feed_dict={x_i:x_data,y_data_i:y_data})
+		losses.append(loss_)
+		accuracies.append(acc_)
+		print "step[%d]: ,loss: %f,accuracy: %.2f"%(step,loss_,acc_)
+		if step%10 == 0:
+			saver.save(sess,"checkpoint/mode.ckpt")
+		logfd.write("%d,%.3f,%.3f\n"%(step,loss_,acc_))
+	logfd.close()
+	print "Training finished!"
+	draw_result(steps,losses,accuracies)
 	return
 
 def main():
